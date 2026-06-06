@@ -1,0 +1,72 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: trade
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+# JWT Configuration
+app:
+  jwt:
+    secret: "c3VwZXItc2VjcmV0LWtleS1mb3ItYmFhc2lkLXRyYWRlLXBsYXRmb3JtLXNlY3VyaXR5LXRva2VuLXZhbGlkYXRpb24=" # 256-bit key in Base64
+    expiration-ms: 86400000 # 24 hours
+
+# Springdoc OpenAPI Config
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Server Config
+server:
+  port: 8080
+  error:
+    include-message: always
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:tradedb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: sa
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    clean-disabled: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:tradedb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  flyway:
+    enabled: true
