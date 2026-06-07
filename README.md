@@ -1,6 +1,19 @@
 # 商品交易系統說明與實作導覽
 
-已成功為**商品交易平台**設計並實作了高水準、安全的後端 RESTful API 服務。本專案完全以 Java 17、Spring Boot 3.3.5、PostgreSQL 及 Flyway 完成，且針對併發交易設計了樂觀鎖及退避重試控制。
+---
+
+## 專案里程碑與開發節點 (Milestones)
+
+為了方便追蹤與審查專案的開發歷程，以下是核心開發節點與版本記錄：
+
+| 版本節點 | 完成日期 | 狀態 | 核心開發內容 | 備註 |
+| :---: | :---: | :---: | :--- | :--- |
+| **v1.0.0** | 2026-06-05 | 已完成 | 基礎 RESTful API 實作、Spring Security + JWT 認證、IP 限流器 (RateLimitingFilter) 與基礎單元測試。 | 預設使用 H2 記憶體資料庫進行開發與驗證 |
+| **v2.0.0** | 2026-06-07 | 已完成 | **資料庫持久化對接**：整合實體 MS SQL Server 連線、支援多環境設定 (`dev`/`mssql`/`prod` profiles)，完成實體資料庫建表與連線測試。 | 本日進度節點 |
+
+---
+
+已成功為**商品交易平台**設計並實作了高水準、安全的後端 RESTful API 服務。本專案支援多種資料庫環境，且針對併發交易設計了樂觀鎖及退避重試控制。
 
 ---
 
@@ -11,6 +24,7 @@
 - **多環境配置 (`application.yml`)**：
   - `dev` 環境（預設）：使用 H2 記憶體資料庫（PostgreSQL 相容模式），並開啟 H2 控制台，方便無資料庫環境下直接啟動測試。
   - `prod` 環境：連結實體 PostgreSQL，由 Docker Compose 統一調度。
+  - `mssql` 環境：連結本地實體 MS SQL Server（如 SQL Server 2025/2022/2019）。在此模式下，Flyway 自動遷移會被關閉，改由 Hibernate `ddl-auto: update` 自動建立與維護資料表，適合本地 Windows 的整合開發。
 
 ### 2. 資料庫設計與 Flyway 遷移 (Migration)
 - **`V1__init_schema.sql`**：建立 `users`、`products` , `orders`、`audit_logs` 四張資料表，並為模糊搜尋、價格區間、軟刪除標記及審計欄位規劃了專屬索引（Index）以應對百萬級數據的查詢。
@@ -62,4 +76,29 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
+
+---
+
+## 如何運行專案
+
+### 1. 預設開發環境 (H2 記憶體資料庫)
+直接執行以下指令啟動（預設會載入 `dev` profile 使用 H2 記憶體資料庫）：
+```bash
+mvnw spring-boot:run
+```
+或直接在 IDE (IntelliJ IDEA) 中點選執行 `TradeApplication` 的 `main` 方法。
+- **Swagger API 文件面板**：`http://localhost:8080/swagger-ui.html`
+- **H2 控制台**：`http://localhost:8080/h2-console`（JDBC URL 為 `jdbc:h2:mem:tradedb`，使用者名稱與密碼皆為 `sa`）
+
+### 2. 本地 MS SQL Server 環境
+1. 確保您的本地 SQL Server 服務（預設執行個體 `MSSQLSERVER`）已啟動，且啟用了 **TCP/IP 協定**（預設連接埠為 `1433`）。
+2. 在 `src/main/resources/application-mssql.yml` 中配置您的資料庫連線、帳號與密碼（預設使用 `sa` / `a0972780085Z`）。
+3. 透過以下命令指定 `mssql` Profile 啟動專案：
+   ```bash
+   mvnw spring-boot:run -Dspring-boot.run.profiles=mssql
+   ```
+   如果在 IntelliJ IDEA 中執行，請在 Run Configuration 的 **Active Profiles** 輸入 `mssql`，或者在 **VM Options** 中加上：
+   ```text
+   -Dspring.profiles.active=mssql
+   ```
 ```
