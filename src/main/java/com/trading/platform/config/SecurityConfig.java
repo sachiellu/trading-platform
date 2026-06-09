@@ -42,37 +42,34 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
-            // Enable frames for H2 Console
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                    response.getWriter().write("{\"error\": \"未經授權 (Unauthorized)\", \"message\": \"尚未登入或驗證憑證已失效，請先登入後再試。\"}");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"" + accessDeniedException.getMessage() + "\"}");
+                    response.getWriter().write("{\"error\": \"拒絕存取 (Forbidden)\", \"message\": \"您的帳號角色權限不足，無法存取此資源。\"}");
                 })
             )
             .authorizeHttpRequests(authorize -> authorize
-                // Public paths
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 
-                // Products endpoints
                 .requestMatchers(HttpMethod.GET, "/api/products/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
                 
-                // Orders endpoints
                 .requestMatchers("/api/orders/**").authenticated()
                 
-                // Audit Logs
                 .requestMatchers("/api/audit-logs/**").hasRole("ADMIN")
                 
                 .anyRequest().authenticated()

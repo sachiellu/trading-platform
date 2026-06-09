@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class OrderRequest {
 
-    @NotNull(message = "Product ID is required")
+    @NotNull(message = "商品 ID 不能為空")
     private Long productId;
 
-    @NotNull(message = "Quantity is required")
-    @Min(value = 1, message = "Quantity must be at least 1")
+    @NotNull(message = "購買數量不能為空")
+    @Min(value = 1, message = "購買數量必須大於等於 1")
     private Integer quantity;
 }

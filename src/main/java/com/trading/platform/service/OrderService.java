@@ -46,16 +46,14 @@ public class OrderService {
         while (true) {
             try {
                 attempt++;
-                // Call executePlaceOrder through the Spring proxy to start a new transaction
                 return self.executePlaceOrder(request, username);
             } catch (ObjectOptimisticLockingFailureException ex) {
                 if (attempt >= maxRetries) {
                     throw new ObjectOptimisticLockingFailureException(
-                            "Failed to place order after " + maxRetries + " attempts due to concurrent updates.", 
+                            "交易過於繁忙，在重試 " + maxRetries + " 次後下單失敗，請稍後再試。", 
                             ex
                     );
                 }
-                // Randomized sleep backoff to stagger retries and reduce thundering herd collisions
                 try {
                     int backoff = java.util.concurrent.ThreadLocalRandom.current().nextInt(20, 150);
                     Thread.sleep(backoff);
@@ -69,17 +67,16 @@ public class OrderService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public OrderResponse executePlaceOrder(OrderRequest request, String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該使用者帳號: " + username));
 
         Product product = productRepository.findByIdAndIsDeletedFalse(request.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found or has been deleted"));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該商品或商品已下架"));
 
         if (product.getStock() < request.getQuantity()) {
-            throw new InsufficientStockException("Insufficient stock for product: " + product.getName() 
-                    + " (requested: " + request.getQuantity() + ", available: " + product.getStock() + ")");
+            throw new InsufficientStockException("商品庫存不足: " + product.getName() 
+                    + " (請求數量: " + request.getQuantity() + ", 現有庫存: " + product.getStock() + ")");
         }
 
-        // Deduct stock, this updates the version field in PostgreSQL automatically via Hibernate's @Version
         product.setStock(product.getStock() - request.getQuantity());
         productRepository.save(product);
 
@@ -101,7 +98,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderResponse> getUserOrders(String username, Pageable pageable) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該使用者"));
         return orderRepository.findByUserId(user.getId(), pageable)
                 .map(this::mapToResponse);
     }

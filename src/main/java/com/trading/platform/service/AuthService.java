@@ -41,11 +41,11 @@ public class AuthService {
             String jwt = tokenProvider.generateToken(authentication);
 
             User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
+                    .orElseThrow(() -> new InvalidCredentialsException("帳號或密碼錯誤"));
 
             return new LoginResponse(jwt, user.getUsername(), user.getRole().name());
         } catch (AuthenticationException ex) {
-            throw new InvalidCredentialsException("Invalid username or password");
+            throw new InvalidCredentialsException("帳號或密碼錯誤");
         }
     }
 }

@@ -35,7 +35,6 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
 
-        // Audit Logging
         auditLogService.log("CREATE", "Product", saved.getId(), null, mapState(saved));
 
         return mapToResponse(saved);
@@ -44,7 +43,7 @@ public class ProductService {
     @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該商品，商品 ID: " + id));
 
         Map<String, Object> beforeState = mapState(product);
 
@@ -54,7 +53,6 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
 
-        // Audit Logging
         auditLogService.log("UPDATE", "Product", saved.getId(), beforeState, mapState(saved));
 
         return mapToResponse(saved);
@@ -63,14 +61,13 @@ public class ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該商品，商品 ID: " + id));
 
         Map<String, Object> beforeState = mapState(product);
 
         product.setIsDeleted(true);
         Product saved = productRepository.save(product);
 
-        // Audit Logging
         auditLogService.log("DELETE", "Product", saved.getId(), beforeState, mapState(saved));
     }
 
@@ -83,7 +80,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("找不到該商品，商品 ID: " + id));
         return mapToResponse(product);
     }
 
